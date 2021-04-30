@@ -1,22 +1,38 @@
 package main
 
 import (
-	"io/ioutil"
+	"bufio"
+	"fmt"
+	"log"
 	"os"
+	"regexp"
+
+	"github.com/fatih/color"
 )
 
 func main() {
-
-	data, err := ioutil.ReadFile("data/lorem.txt")
+	file, err := os.Open("data/lorem.txt")
 	if err != nil {
 		panic(err)
 	}
-	match := os.Args[1]
 
-	f := finder{}
+	match := "lorem"
 
-	err = f.Find(os.Stdout, string(data), match)
+	r, err := regexp.Compile(match)
 	if err != nil {
 		panic(err)
 	}
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		if r.MatchString(scanner.Text()) {
+			fmt.Println(r.ReplaceAllString(scanner.Text(), color.YellowString(match)))
+		}
+	}
+
+	if err = scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+
 }
