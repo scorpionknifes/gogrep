@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"log"
 	"regexp"
 
 	"github.com/fatih/color"
@@ -46,18 +45,26 @@ func (f *finder) find() error {
 
 	allStr := f.regex.FindAllStringIndex(text, -1)
 
+	// fmt.Println(newlines)
+	// fmt.Println(allStr)
+
 	for _, str := range allStr {
 		for len(newlines) != newline && str[0] > newlines[newline][0] {
 			newline++
 		}
 		match := color.YellowString(text[str[0]:str[1]])
 		lineNumber := newline + 1
+
 		charNumber := str[0]
+
 		headNumber := 0
 		head := ""
 		if newline > 0 {
-			headNumber = defaultHead
+			//steps
 			charNumber = str[0] - newlines[newline-1][1]
+
+			//steps
+			headNumber = defaultHead
 			if charNumber < headNumber {
 				headNumber = charNumber
 			}
@@ -75,18 +82,13 @@ func (f *finder) find() error {
 		if newline < len(newlines) {
 			lastNumber := -str[1] + newlines[newline][0]
 			tailNumber = defaultHead + defaultTail - headNumber
-			log.Println(tailNumber)
-			if lastNumber < tailNumber && lastNumber > 0 {
+			//log.Println(tailNumber)
+			if lastNumber < tailNumber {
 				tailNumber = lastNumber
 			}
+			//log.Println(tailNumber)
 		}
-		tail := ""
-		if tailNumber+str[1] > len(allStr) {
-			tail = text[str[1] : str[1]+len(allStr)-1]
-		} else {
-			tail = text[str[1] : str[1]+tailNumber]
-		}
-
+		tail := text[str[1] : str[1]+tailNumber]
 		f.print(lineNumber, charNumber, head, match, tail)
 	}
 	return nil
