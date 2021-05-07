@@ -100,8 +100,8 @@ func (f *finder) find() error {
 
 func (f *finder) print(lineNumber, charNumber int, head, match, tail string) {
 	path := ""
-	if f.path == "" {
-		path = color.RedString("%s", f.path)
+	if f.path != "" {
+		path = color.RedString("%s", f.path) + ":"
 	}
 
 	fmt.Fprintf(
