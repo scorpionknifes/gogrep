@@ -18,17 +18,19 @@ var (
 )
 
 type finder struct {
+	path   string
 	w      io.Writer
 	text   *string
 	regex  *regexp.Regexp
 	nlines int
 }
 
-func (f *finder) Find(w io.Writer, text string, regex string) error {
+func (f *finder) Find(w io.Writer, path string, text string, regex string) error {
 	r, err := regexp.Compile(regex)
 	if err != nil {
 		return err
 	}
+	f.path = path
 	f.w = w
 	f.regex = r
 	f.text = &text
@@ -99,7 +101,8 @@ func (f *finder) find() error {
 func (f *finder) print(lineNumber, charNumber int, head, match, tail string) {
 	fmt.Fprintf(
 		f.w,
-		"%s:%s: %s%s%s\n",
+		"%s:%s:%s: %s%s%s\n",
+		color.RedString("%s", f.path),
 		color.GreenString("%d", lineNumber),
 		color.GreenString("%d", charNumber),
 		newlineRegex.ReplaceAllString(head, "\\n"),
