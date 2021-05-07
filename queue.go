@@ -39,9 +39,9 @@ func (q *jobQueue) dispatch() {
 	q.dispatcherStopped.Add(1)
 	for {
 		select {
-		case job := <-q.internalQueue: // We got something in on our queue
-			workerChannel := <-q.readyPool // Check out an available worker
-			workerChannel <- job           // Send the request to the channel
+		case job := <-q.internalQueue:
+			workerChannel := <-q.readyPool
+			workerChannel <- job
 		case <-q.quit:
 			for i := 0; i < len(q.workers); i++ {
 				q.workers[i].stop()

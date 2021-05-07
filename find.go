@@ -99,10 +99,15 @@ func (f *finder) find() error {
 }
 
 func (f *finder) print(lineNumber, charNumber int, head, match, tail string) {
+	path := ""
+	if f.path == "" {
+		path = color.RedString("%s", f.path)
+	}
+
 	fmt.Fprintf(
 		f.w,
-		"%s:%s:%s: %s%s%s\n",
-		color.RedString("%s", f.path),
+		"%s%s:%s: %s%s%s\n",
+		path,
 		color.GreenString("%d", lineNumber),
 		color.GreenString("%d", charNumber),
 		newlineRegex.ReplaceAllString(head, "\\n"),
