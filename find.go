@@ -18,9 +18,10 @@ var (
 )
 
 type finder struct {
-	w     io.Writer
-	text  *string
-	regex *regexp.Regexp
+	w      io.Writer
+	text   *string
+	regex  *regexp.Regexp
+	nlines int
 }
 
 func (f *finder) Find(w io.Writer, text string, regex string) error {
@@ -31,6 +32,7 @@ func (f *finder) Find(w io.Writer, text string, regex string) error {
 	f.w = w
 	f.regex = r
 	f.text = &text
+	f.nlines = len(newlineRegex.FindAllStringIndex(regex, -1))
 
 	return f.find()
 }
@@ -79,8 +81,8 @@ func (f *finder) find() error {
 			}
 		}
 		tailNumber := 0
-		if newline < len(newlines) {
-			lastNumber := -str[1] + newlines[newline][0]
+		if newline+f.nlines < len(newlines) {
+			lastNumber := -str[1] + newlines[newline+f.nlines][0]
 			tailNumber = defaultHead + defaultTail - headNumber
 			//log.Println(tailNumber)
 			if lastNumber < tailNumber {

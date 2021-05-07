@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func BenchmarkRandInt(b *testing.B) {
+func Benchmark_Random(b *testing.B) {
 	data, err := ioutil.ReadFile("data/lorem.txt")
 	if err != nil {
 		panic(err)
@@ -51,7 +51,7 @@ func Test_finder_Find(t *testing.T) {
 		{"match 5:6", args{"\n\n\n\ntest tmatch test\n\n\n", "match"}, "5:6: test tmatch test\n", false},
 		{"match 1:0, 2:0", args{"match\nmatch", "match"}, "1:0: match\n2:0: match\n", false},
 		{"match 1:4, 2:4", args{"test match test\ntest match test", "match"}, "1:5: test match test\n2:5: test match test\n", false},
-		//{"multiline 1:4, 2:4", args{"test match\ntest match test", "match\n"}, "1:5: test match test\n2:5: test match test\n", false},
+		{"multiline 1:4, 2:4", args{"test match\ntest match test", "match\n"}, "1:5: test match\\ntest match test\n", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

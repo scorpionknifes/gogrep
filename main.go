@@ -17,7 +17,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	match := "lorem" //os.Args[1]
+	match := os.Args[1]
 
 	// file, err := os.Open("file.go")
 	// if err != nil {
@@ -27,8 +27,10 @@ func main() {
 
 	f := finder{}
 
-	err = f.Find(os.Stdout, string(data), match)
-	if err != nil {
-		panic(err)
+	for {
+		err = f.Find(os.Stdout, string(data), match)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
