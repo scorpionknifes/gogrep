@@ -1,6 +1,10 @@
 package main
 
-import "sync"
+import (
+	"context"
+	"log"
+	"sync"
+)
 
 type job interface {
 	Process()
@@ -11,34 +15,28 @@ func newWorker(readyPool chan chan job, done *sync.WaitGroup) *worker {
 		done:             done,
 		readyPool:        readyPool,
 		assignedJobQueue: make(chan job),
-		quit:             make(chan bool),
 	}
+	// TODO create channel and return channel
 }
 
 type worker struct {
 	done             *sync.WaitGroup
 	readyPool        chan chan job
 	assignedJobQueue chan job
-
-	quit chan bool
 }
 
-func (w *worker) start() {
+func (w *worker) start(ctx context.Context) {
 	w.done.Add(1)
 	go func() {
 		for {
-			w.readyPool <- w.assignedJobQueue
 			select {
 			case job := <-w.assignedJobQueue:
 				job.Process()
-			case <-w.quit:
+			case <-ctx.Done():
+				log.Println("Done worker")
 				w.done.Done()
 				return
 			}
 		}
 	}()
-}
-
-func (w *worker) stop() {
-	w.quit <- true
 }

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"io/ioutil"
 	_ "net/http/pprof"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -19,7 +21,7 @@ func (j *grepJob) Process() {
 	f := finder{}
 	err := f.Find(os.Stdout, j.path, j.data, j.match)
 	if err != nil {
-		return
+		panic(err)
 	}
 }
 
@@ -28,9 +30,11 @@ func main() {
 	// 	log.Println(http.ListenAndServe("localhost:6060", nil))
 	// }()
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
 	queue := newJobQueue(runtime.NumCPU() - 1)
-	queue.start()
-	defer queue.stop()
+	queue.start(ctx)
 
 	match := os.Args[1]
 
@@ -61,8 +65,7 @@ func main() {
 				panic(err)
 			}
 
-			queue.submit(&grepJob{path, string(data), match})
-
+			queue.submit(ctx, &grepJob{path, string(data), match})
 			return nil
 		})
 	if err != nil {

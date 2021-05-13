@@ -39,7 +39,7 @@ func (f *finder) Find(w io.Writer, path string, text string, regex string) error
 	return f.find()
 }
 
-func (f *finder) find() error {
+func (f *finder) find() error { // remove error
 	if *f.text == "" {
 		return nil
 	}
