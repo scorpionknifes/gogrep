@@ -17,19 +17,15 @@ type grepJob struct {
 	match string
 }
 
-func (j *grepJob) Process() {
+func (j *grepJob) Process(ctx context.Context) {
 	f := finder{}
-	err := f.Find(os.Stdout, j.path, j.data, j.match)
+	err := f.Find(os.Stdout, ctx, j.path, j.data, j.match)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func main() {
-	// go func() {
-	// 	log.Println(http.ListenAndServe("localhost:6060", nil))
-	// }()
-
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
@@ -37,7 +33,6 @@ func main() {
 	queue.start(ctx)
 
 	match := os.Args[1]
-
 	err := filepath.Walk(os.Args[2],
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -71,4 +66,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	queue.wg.Wait()
 }

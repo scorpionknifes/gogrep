@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"regexp"
@@ -25,7 +26,7 @@ type finder struct {
 	nlines int
 }
 
-func (f *finder) Find(w io.Writer, path string, text string, regex string) error {
+func (f *finder) Find(w io.Writer, ctx context.Context, path string, text string, regex string) error {
 	r, err := regexp.Compile(regex)
 	if err != nil {
 		return err
@@ -36,10 +37,10 @@ func (f *finder) Find(w io.Writer, path string, text string, regex string) error
 	f.text = &text
 	f.nlines = len(newlineRegex.FindAllStringIndex(regex, -1))
 
-	return f.find()
+	return f.find(ctx)
 }
 
-func (f *finder) find() error { // remove error
+func (f *finder) find(ctx context.Context) error { // remove error
 	if *f.text == "" {
 		return nil
 	}
@@ -53,6 +54,9 @@ func (f *finder) find() error { // remove error
 	// fmt.Println(allStr)
 
 	for _, str := range allStr {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		for len(newlines) != newline && str[0] > newlines[newline][0] {
 			newline++
 		}

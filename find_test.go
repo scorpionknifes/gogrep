@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"io/ioutil"
 	"testing"
@@ -24,7 +25,7 @@ func Benchmark_Random(b *testing.B) {
 
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		err = f.Find(io.Discard, "", string(data), match)
+		err = f.Find(io.Discard, context.Background(), "", string(data), match)
 		if err != nil {
 			b.Fail()
 		}
@@ -58,7 +59,7 @@ func Test_finder_Find(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			f := &finder{}
 			w := &bytes.Buffer{}
-			if err := f.Find(w, tt.args.path, tt.args.text, tt.args.regex); (err != nil) != tt.wantErr {
+			if err := f.Find(w, context.Background(), tt.args.path, tt.args.text, tt.args.regex); (err != nil) != tt.wantErr {
 				t.Errorf("finder.Find() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
