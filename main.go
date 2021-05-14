@@ -21,7 +21,7 @@ func (j *grepJob) Process(ctx context.Context) {
 	f := finder{}
 	err := f.Find(os.Stdout, ctx, j.path, j.data, j.match)
 	if err != nil {
-		panic(err)
+		return
 	}
 }
 
@@ -36,7 +36,7 @@ func main() {
 	err := filepath.Walk(os.Args[2],
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return nil
 			}
 			if info.IsDir() {
 				return nil
@@ -44,11 +44,11 @@ func main() {
 
 			file, err := os.Open(path)
 			if err != nil {
-				panic(err)
+				return nil
 			}
 			contentType, err := GetFileContentType(file)
 			if err != nil {
-				panic(err)
+				return nil
 			}
 			types := strings.Split(contentType, "/")
 			if types[0] != "text" {
@@ -57,7 +57,7 @@ func main() {
 
 			data, err := ioutil.ReadFile(path)
 			if err != nil {
-				panic(err)
+				return nil
 			}
 
 			queue.submit(ctx, &grepJob{path, string(data), match})
