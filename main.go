@@ -11,20 +11,6 @@ import (
 	"strings"
 )
 
-type grepJob struct {
-	path  string
-	data  string
-	match string
-}
-
-func (j *grepJob) Process(ctx context.Context) {
-	f := finder{}
-	err := f.Find(os.Stdout, ctx, j.path, j.data, j.match)
-	if err != nil {
-		return
-	}
-}
-
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()

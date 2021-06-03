@@ -5,10 +5,6 @@ import (
 	"sync"
 )
 
-type job interface {
-	Process(ctx context.Context)
-}
-
 func newWorker(readyPool chan chan job, wg *sync.WaitGroup) *worker {
 	assignedJobQueue := make(chan job)
 	return &worker{
