@@ -11,21 +11,23 @@ type job interface {
 
 func newWorker(readyPool chan chan job, wg *sync.WaitGroup) *worker {
 	assignedJobQueue := make(chan job)
-	readyPool <- assignedJobQueue
 	return &worker{
 		assignedJobQueue: assignedJobQueue,
 		wg:               wg,
+		readyPool:        readyPool,
 	}
 }
 
 type worker struct {
 	assignedJobQueue chan job
 	wg               *sync.WaitGroup
+	readyPool        chan chan job
 }
 
 func (w *worker) start(ctx context.Context) {
 	go func() {
 		for {
+			w.readyPool <- w.assignedJobQueue
 			select {
 			case job := <-w.assignedJobQueue:
 				job.Process(ctx)

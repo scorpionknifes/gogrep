@@ -59,6 +59,8 @@ func Test_finder_Find(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			f := &finder{}
 			w := &bytes.Buffer{}
+			// ctx, cancel := context.WithCancel(context.Background())
+			// cancel()
 			if err := f.Find(w, context.Background(), tt.args.path, tt.args.text, tt.args.regex); (err != nil) != tt.wantErr {
 				t.Errorf("finder.Find() error = %v, wantErr %v", err, tt.wantErr)
 				return
