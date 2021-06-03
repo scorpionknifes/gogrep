@@ -17,6 +17,7 @@ type grepJob struct {
 
 func (j *grepJob) Process(ctx context.Context) {
 	f := finder{}
+	// Replace os.Stdout with ioutil.Discard for benchmarking
 	err := f.Find(os.Stdout, ctx, j.path, j.data, j.match)
 	if err != nil {
 		return
