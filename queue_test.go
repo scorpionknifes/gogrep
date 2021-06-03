@@ -59,7 +59,7 @@ func Test_Queue(t *testing.T) {
 	})
 }
 
-func Test_QueueDispatch(t *testing.T) {
+func Test_QueueInternalQueue(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -93,19 +93,6 @@ func Test_QueueDispatch(t *testing.T) {
 
 		queue.submit(ctx, &mockJob{})
 		queue.submit(ctx, &mockJob{})
-		queue.submit(ctx, &mockJob{})
-
-		time.Sleep(1 * time.Second)
-
-		if len(queue.jobsIn) != 3 {
-			t.Error("not added to internal queue")
-		}
-	})
-
-	t.Run("Pass in workerChan", func(t *testing.T) {
-		queue := newJobQueue(0)
-		go queue.dispatch(ctx)
-		queue.readyPool <- make(chan job)
 		queue.submit(ctx, &mockJob{})
 
 		time.Sleep(1 * time.Second)
