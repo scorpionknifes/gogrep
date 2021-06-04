@@ -69,10 +69,11 @@ func (q *jobQueue) submit(ctx context.Context, job job) {
 			break
 		}
 	}
+	q.wg.Add(1)
 	select {
 	case q.internalQueue <- job:
-		q.wg.Add(1)
 	case <-ctx.Done():
+		q.wg.Done()
 		return
 	}
 }

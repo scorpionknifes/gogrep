@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func GetFileContentType(out *os.File) (string, error) {
+func getFileContentType(out *os.File) (string, error) {
 	buffer := make([]byte, 512)
 
 	_, err := out.Read(buffer)

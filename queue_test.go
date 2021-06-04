@@ -12,7 +12,9 @@ func Test_Queue(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		queue := newJobQueue(1)
 		queue.start(ctx)
+		queue.submit(ctx, &mockJob{})
 		cancel()
+		queue.submit(ctx, &mockJob{})
 	})
 
 	t.Run("Single task single goroutine", func(t *testing.T) {

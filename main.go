@@ -21,7 +21,10 @@ func main() {
 	queue := newJobQueue(runtime.NumCPU() - 1)
 	queue.start(ctx)
 
-	match, dirname := cli(os.Args)
+	match, dirname, exitcode := cli(os.Args)
+	if exitcode != nil {
+		os.Exit(*exitcode)
+	}
 
 	err := godirwalk.Walk(dirname, &godirwalk.Options{
 		Callback: func(filePath string, de *godirwalk.Dirent) error {
@@ -56,7 +59,7 @@ func main() {
 }
 
 // cli
-func cli(args []string) (string, string) {
+func cli(args []string) (string, string, *int) {
 	const relativePath = "."
 	name := args[0]
 
@@ -66,16 +69,17 @@ func cli(args []string) (string, string) {
 			fmt.Printf("Usage: %s PATTERN [PATH]\n", name)
 			fmt.Printf("Search for PATTERN in each FILE in PATH")
 			fmt.Printf("Example: %s 'hello world' ./folder", name)
-			os.Exit(0)
+			exitcode := 0
+			return "", "", &exitcode
 		}
-		return args[1], relativePath
+		return args[1], relativePath, nil
 	case 3:
-		return args[1], args[2]
+		return args[1], args[2], nil
 	default:
 		fmt.Printf("usage: %s PATTERN [PATH]\n", name)
 		fmt.Printf("Try '%s --help' for more information\n", name)
-		os.Exit(1)
-		return "", ""
+		exitcode := 1
+		return "", "", &exitcode
 	}
 }
 
@@ -85,7 +89,7 @@ func isText(filePath string) bool {
 	if err != nil {
 		return false
 	}
-	contentType, err := GetFileContentType(file)
+	contentType, err := getFileContentType(file)
 	if err != nil {
 		return false
 	}

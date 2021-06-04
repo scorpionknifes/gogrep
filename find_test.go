@@ -19,13 +19,13 @@ func Benchmark_Random(b *testing.B) {
 	// if err != nil {
 	// 	panic(err)
 	// }
-	// GetFileContentType(file)
+	// getFileContentType(file)
 
 	f := finder{}
 
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		err = f.Find(io.Discard, context.Background(), "", string(data), match)
+		err = f.Find(context.Background(), io.Discard, "", string(data), match)
 		if err != nil {
 			b.Fail()
 		}
@@ -64,7 +64,7 @@ func Test_FinderFind(t *testing.T) {
 			w := &bytes.Buffer{}
 			// ctx, cancel := context.WithCancel(context.Background())
 			// cancel()
-			if err := f.Find(w, context.Background(), tt.args.path, tt.args.text, tt.args.regex); (err != nil) != tt.wantErr {
+			if err := f.Find(context.Background(), w, tt.args.path, tt.args.text, tt.args.regex); (err != nil) != tt.wantErr {
 				t.Errorf("finder.Find() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
@@ -96,7 +96,7 @@ func Test_FinderFindContext(t *testing.T) {
 			w := &bytes.Buffer{}
 			ctx, cancel := context.WithCancel(context.Background())
 			cancel()
-			if err := f.Find(w, ctx, tt.args.path, tt.args.text, tt.args.regex); (err != nil) != tt.wantErr {
+			if err := f.Find(ctx, w, tt.args.path, tt.args.text, tt.args.regex); (err != nil) != tt.wantErr {
 				t.Errorf("finder.Find() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}

@@ -26,7 +26,7 @@ type finder struct {
 	nlines int
 }
 
-func (f *finder) Find(w io.Writer, ctx context.Context, path string, text string, regex string) error {
+func (f *finder) Find(ctx context.Context, w io.Writer, path string, text string, regex string) error {
 	r, err := regexp.Compile(regex)
 	if err != nil {
 		return err
