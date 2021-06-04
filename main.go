@@ -27,28 +27,7 @@ func main() {
 	}
 
 	err := godirwalk.Walk(dirname, &godirwalk.Options{
-		Callback: func(filePath string, de *godirwalk.Dirent) error {
-			if isIgnore(filePath) {
-				return godirwalk.SkipThis
-			}
-
-			// don't check .git folder but make sure to scan .gitignore
-			if strings.Contains(filePath, ".git") && !strings.Contains(filePath, ".gitignore") {
-				return godirwalk.SkipThis
-			}
-
-			if !isText(filePath) {
-				return nil
-			}
-
-			data, err := ioutil.ReadFile(filePath)
-			if err != nil {
-				return nil
-			}
-
-			queue.submit(ctx, &grepJob{filePath, string(data), match})
-			return nil
-		},
+		Callback: godirCallBack(ctx, queue, match),
 		Unsorted: true, // (optional) set true for faster yet non-deterministic enumeration (see godoc)
 	})
 	if err != nil {
@@ -56,6 +35,32 @@ func main() {
 	}
 
 	queue.wg.Wait()
+}
+
+func godirCallBack(ctx context.Context, queue *jobQueue, match string) func(filePath string, _ *godirwalk.Dirent) error {
+	return func(filePath string, _ *godirwalk.Dirent) error {
+		if isIgnore(filePath) {
+			return godirwalk.SkipThis
+		}
+
+		// don't check .git folder but make sure to scan .gitignore
+		if strings.Contains(filePath, ".git") && !strings.Contains(filePath, ".gitignore") {
+			return godirwalk.SkipThis
+		}
+
+		if !isText(filePath) {
+			return nil
+		}
+
+		data, err := ioutil.ReadFile(filePath)
+		if err != nil {
+			return nil
+		}
+
+		queue.submit(ctx, &grepJob{filePath, string(data), match})
+		return nil
+	}
+
 }
 
 // cli

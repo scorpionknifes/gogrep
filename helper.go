@@ -1,11 +1,11 @@
 package main
 
 import (
+	"io"
 	"net/http"
-	"os"
 )
 
-func getFileContentType(out *os.File) (string, error) {
+func getFileContentType(out io.Reader) (string, error) {
 	buffer := make([]byte, 512)
 
 	_, err := out.Read(buffer)

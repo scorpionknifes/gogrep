@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"testing"
-	"time"
 )
 
 func Test_Queue(t *testing.T) {
@@ -90,8 +89,6 @@ func Test_QueueInternalQueue(t *testing.T) {
 		queue := newJobQueue(0)
 		go queue.dispatch(ctx)
 
-		time.Sleep(1 * time.Millisecond)
-
 		if len(queue.jobsIn) != 0 {
 			t.Error("queue should be empty")
 		}
@@ -102,8 +99,6 @@ func Test_QueueInternalQueue(t *testing.T) {
 		go queue.dispatch(ctx)
 
 		queue.submit(ctx, &mockJob{})
-
-		time.Sleep(1 * time.Millisecond)
 
 		if len(queue.jobsIn) != 1 {
 			t.Error("not added to internal queue")
@@ -117,8 +112,6 @@ func Test_QueueInternalQueue(t *testing.T) {
 		queue.submit(ctx, &mockJob{})
 		queue.submit(ctx, &mockJob{})
 		queue.submit(ctx, &mockJob{})
-
-		time.Sleep(1 * time.Millisecond)
 
 		if len(queue.jobsIn) != 3 {
 			t.Error("not added to internal queue")
@@ -136,8 +129,6 @@ func Test_QueueReadyPool(t *testing.T) {
 		queue := newJobQueue(0)
 		go queue.dispatch(ctx)
 
-		time.Sleep(1 * time.Millisecond)
-
 		if len(queue.jobsIn) != 0 {
 			t.Error("queue should be empty")
 		}
@@ -148,8 +139,6 @@ func Test_QueueReadyPool(t *testing.T) {
 		go queue.dispatch(ctx)
 
 		queue.readyPool <- mockJobQueue
-
-		time.Sleep(1 * time.Millisecond)
 
 		if len(queue.jobChans) != 1 {
 			t.Error("not added to internal queue")
@@ -163,8 +152,6 @@ func Test_QueueReadyPool(t *testing.T) {
 		queue.readyPool <- mockJobQueue
 		queue.readyPool <- mockJobQueue
 		queue.readyPool <- mockJobQueue
-
-		time.Sleep(1 * time.Millisecond)
 
 		if len(queue.jobChans) != 3 {
 			t.Error("not added to internal queue")

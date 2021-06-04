@@ -43,7 +43,6 @@ func (q *jobQueue) start(ctx context.Context) {
 }
 
 func (q *jobQueue) dispatch(ctx context.Context) {
-	q.started = true
 	for {
 		select {
 		case job := <-q.internalQueue:
@@ -77,11 +76,6 @@ func (q *jobQueue) dispatch(ctx context.Context) {
 }
 
 func (q *jobQueue) submit(ctx context.Context, job job) {
-	for {
-		if q.started {
-			break
-		}
-	}
 	q.wg.Add(1)
 	select {
 	case q.internalQueue <- job:
