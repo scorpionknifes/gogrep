@@ -5,9 +5,10 @@ import (
 	"sync"
 )
 
-func newWorker(readyPool chan chan job, wg *sync.WaitGroup) *worker {
+func newWorker(readyPool chan chan job, wg *sync.WaitGroup, number int) *worker {
 	assignedJobQueue := make(chan job)
 	return &worker{
+		number:           number,
 		assignedJobQueue: assignedJobQueue,
 		wg:               wg,
 		readyPool:        readyPool,
@@ -15,6 +16,7 @@ func newWorker(readyPool chan chan job, wg *sync.WaitGroup) *worker {
 }
 
 type worker struct {
+	number           int
 	assignedJobQueue chan job
 	wg               *sync.WaitGroup
 	readyPool        chan chan job
@@ -26,6 +28,7 @@ func (w *worker) start(ctx context.Context) {
 			w.readyPool <- w.assignedJobQueue
 			select {
 			case job := <-w.assignedJobQueue:
+				// fmt.Println("worker number:",w.number)
 				job.Process(ctx)
 				w.wg.Done()
 			case <-ctx.Done():

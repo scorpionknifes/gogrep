@@ -15,6 +15,7 @@ func Test_isTest(t *testing.T) {
 		want bool
 	}{
 		{"empty", args{}, false},
+		{"load empty file", args{"./data/empty.txt"}, false},
 		{"load text file", args{"./data/lorem0.txt"}, true},
 		{"load exe file", args{"./data/example.exe"}, false},
 	}
@@ -37,6 +38,7 @@ func Test_isIgnore(t *testing.T) {
 		want bool
 	}{
 		{"empty", args{}, false},
+		{"load empty file", args{"./data/empty.txt"}, false},
 		{"load text file", args{"./data/lorem0.txt"}, false},
 		{"load exe file", args{"./data/example.exe"}, false},
 	}

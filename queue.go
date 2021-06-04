@@ -7,11 +7,12 @@ import (
 
 type jobQueue struct {
 	internalQueue chan job
+	jobChans      []chan job
 	jobChan       chan job
 	workers       []*worker
 	jobsIn        []job
+	jobIn         job
 	readyPool     chan chan job
-	workerChanIn  chan chan job
 	wg            *sync.WaitGroup
 	started       bool
 }
@@ -22,7 +23,7 @@ func newJobQueue(maxWorkers int) *jobQueue {
 	wg := sync.WaitGroup{}
 
 	for i := 0; i < maxWorkers; i++ {
-		workers[i] = newWorker(readyPool, &wg)
+		workers[i] = newWorker(readyPool, &wg, i)
 	}
 
 	return &jobQueue{
@@ -42,24 +43,36 @@ func (q *jobQueue) start(ctx context.Context) {
 }
 
 func (q *jobQueue) dispatch(ctx context.Context) {
+	q.started = true
 	for {
 		select {
 		case job := <-q.internalQueue:
 			q.jobsIn = append(q.jobsIn, job)
-			q.workerChanIn = q.readyPool
-		case workerChannel := <-q.workerChanIn:
-			q.jobChan = workerChannel
-			q.workerChanIn = nil
+			if len(q.jobsIn) != 0 && len(q.jobChans) != 0 && q.jobChan == nil {
+				q.jobChan = q.jobChans[0]
+				q.jobChans = q.jobChans[1:]
+				q.jobIn = q.jobsIn[0]
+			}
+		case workerChannel := <-q.readyPool:
+			q.jobChans = append(q.jobChans, workerChannel)
+			if len(q.jobsIn) != 0 && len(q.jobChans) != 0 && q.jobChan == nil {
+				q.jobChan = q.jobChans[0]
+				q.jobChans = q.jobChans[1:]
+				q.jobIn = q.jobsIn[0]
+			}
 		case <-ctx.Done():
 			return
-		default:
-			if len(q.jobsIn) == 0 || q.jobChan == nil {
-				break
-			}
-			q.jobChan <- q.jobsIn[0]
+		case q.jobChan <- q.jobIn:
 			q.jobsIn = q.jobsIn[1:]
+			if len(q.jobsIn) != 0 && len(q.jobChans) != 0 {
+				q.jobChan = q.jobChans[0]
+				q.jobChans = q.jobChans[1:]
+				q.jobIn = q.jobsIn[0]
+			} else {
+				q.jobChan = nil
+				q.jobIn = nil
+			}
 		}
-		q.started = true
 	}
 }
 
