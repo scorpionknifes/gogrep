@@ -1,5 +1,7 @@
 # gogrep
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/scorpionknifes/gogrep)](https://goreportcard.com/report/github.com/scorpionknifes/gogrep)
+
 Command line tool to search patterns inside a directory
 
 ## Features
