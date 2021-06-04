@@ -21,7 +21,7 @@ func main() {
 	queue := newJobQueue(runtime.NumCPU() - 1)
 	queue.start(ctx)
 
-	match, dirname := cli()
+	match, dirname := cli(os.Args)
 
 	err := godirwalk.Walk(dirname, &godirwalk.Options{
 		Callback: func(filePath string, de *godirwalk.Dirent) error {
@@ -29,6 +29,7 @@ func main() {
 				return godirwalk.SkipThis
 			}
 
+			// don't check .git folder but make sure to scan .gitignore
 			if strings.Contains(filePath, ".git") && !strings.Contains(filePath, ".gitignore") {
 				return godirwalk.SkipThis
 			}
@@ -55,21 +56,21 @@ func main() {
 }
 
 // cli
-func cli() (string, string) {
+func cli(args []string) (string, string) {
 	const relativePath = "."
-	name := os.Args[0]
+	name := args[0]
 
-	switch len(os.Args) {
+	switch len(args) {
 	case 2:
-		if os.Args[1] == "--help" {
+		if args[1] == "--help" {
 			fmt.Printf("Usage: %s PATTERN [PATH]\n", name)
 			fmt.Printf("Search for PATTERN in each FILE in PATH")
 			fmt.Printf("Example: %s 'hello world' ./folder", name)
 			os.Exit(0)
 		}
-		return os.Args[1], relativePath
+		return args[1], relativePath
 	case 3:
-		return os.Args[1], os.Args[2]
+		return args[1], args[2]
 	default:
 		fmt.Printf("usage: %s PATTERN [PATH]\n", name)
 		fmt.Printf("Try '%s --help' for more information\n", name)

@@ -40,7 +40,7 @@ func (f *finder) Find(w io.Writer, ctx context.Context, path string, text string
 	return f.find(ctx)
 }
 
-func (f *finder) find(ctx context.Context) error { // remove error
+func (f *finder) find(ctx context.Context) error {
 	if *f.text == "" {
 		return nil
 	}
@@ -49,9 +49,6 @@ func (f *finder) find(ctx context.Context) error { // remove error
 	newline := 0
 
 	allStr := f.regex.FindAllStringIndex(text, -1)
-
-	// fmt.Println(newlines)
-	// fmt.Println(allStr)
 
 	for _, str := range allStr {
 		if err := ctx.Err(); err != nil {
@@ -90,11 +87,9 @@ func (f *finder) find(ctx context.Context) error { // remove error
 		if newline+f.nlines < len(newlines) {
 			lastNumber := -str[1] + newlines[newline+f.nlines][0]
 			tailNumber = defaultHead + defaultTail - headNumber
-			//log.Println(tailNumber)
 			if lastNumber < tailNumber {
 				tailNumber = lastNumber
 			}
-			//log.Println(tailNumber)
 		}
 		tail := text[str[1] : str[1]+tailNumber]
 		f.print(lineNumber, charNumber, head, match, tail)

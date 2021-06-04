@@ -9,8 +9,8 @@ type jobQueue struct {
 	internalQueue chan job
 	jobChan       chan job
 	workers       []*worker
-	readyPool     chan chan job
 	jobsIn        []job
+	readyPool     chan chan job
 	workerChanIn  chan chan job
 	wg            *sync.WaitGroup
 	started       bool
