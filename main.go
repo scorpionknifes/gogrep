@@ -1,33 +1,37 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"os/signal"
 	"runtime"
 	"strings"
 
+	"github.com/go-git/go-billy/v5/osfs"
+	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"github.com/karrick/godirwalk"
 )
 
 func main() {
+	start(os.Args)
+}
+
+func start(args []string) {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
 	queue := newJobQueue(runtime.NumCPU() - 1)
 	queue.start(ctx)
 
-	match, dirname, exitcode := cli(os.Args)
+	match, dirname, exitcode := cli(args)
 	if exitcode != nil {
 		os.Exit(*exitcode)
 	}
 
 	err := godirwalk.Walk(dirname, &godirwalk.Options{
-		Callback: godirCallBack(ctx, queue, match),
+		Callback: godirCallBack(ctx, queue, match, newMatcher(dirname)),
 		Unsorted: true, // (optional) set true for faster yet non-deterministic enumeration (see godoc)
 	})
 	if err != nil {
@@ -37,9 +41,9 @@ func main() {
 	queue.wg.Wait()
 }
 
-func godirCallBack(ctx context.Context, queue *jobQueue, match string) func(filePath string, _ *godirwalk.Dirent) error {
+func godirCallBack(ctx context.Context, queue *jobQueue, match string, matcher gitignore.Matcher) func(filePath string, _ *godirwalk.Dirent) error {
 	return func(filePath string, _ *godirwalk.Dirent) error {
-		if isIgnore(filePath) {
+		if isIgnore(filePath, matcher) {
 			return godirwalk.SkipThis
 		}
 
@@ -102,23 +106,17 @@ func isText(filePath string) bool {
 	return types[0] == "text"
 }
 
-// isText checks if the file or path is gitignored using git check-ignore
-// only works if git is install on PC.
-func isIgnore(filePath string) bool {
-	cmd := exec.Command("git", "check-ignore", filePath)
-	stdout, err := cmd.StdoutPipe()
+func newMatcher(dirname string) gitignore.Matcher {
+	fs := osfs.New(".")
+	ps, err := gitignore.ReadPatterns(fs, strings.Split(dirname, "/"))
 	if err != nil {
-		return false
+		panic(err)
 	}
-	if err := cmd.Start(); err != nil {
-		return false
-	}
-	buf := new(bytes.Buffer)
-	if _, err := buf.ReadFrom(stdout); err != nil {
-		return false
-	}
-	if buf.String() == "" {
-		return false
-	}
-	return true
+	return gitignore.NewMatcher(ps)
+}
+
+// isIgnore checks if the file or path is gitignored using git check-ignore
+// only works if git is install on PC.
+func isIgnore(filePath string, matcher gitignore.Matcher) bool {
+	return matcher.Match(strings.Split(filePath, "/"), true)
 }

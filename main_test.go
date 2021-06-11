@@ -5,6 +5,24 @@ import (
 	"testing"
 )
 
+func Test_start(t *testing.T) {
+	type args struct {
+		args []string
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{"lorem", args{[]string{"gogrep", "lorem."}}},
+		{"lorem data", args{[]string{"gogrep", "lorem.", "data"}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			start(tt.args.args)
+		})
+	}
+}
+
 func Test_isTest(t *testing.T) {
 	type args struct {
 		filePath string
@@ -42,9 +60,10 @@ func Test_isIgnore(t *testing.T) {
 		{"load text file", args{"./data/lorem0.txt"}, false},
 		{"load exe file", args{"./data/example.exe"}, false},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isIgnore(tt.args.filePath); got != tt.want {
+			if got := isIgnore(tt.args.filePath, newMatcher("data")); got != tt.want {
 				t.Errorf("isIgnore() = %v, want %v", got, tt.want)
 			}
 		})
