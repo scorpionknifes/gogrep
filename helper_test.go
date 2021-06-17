@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"embed"
 	_ "embed"
 	"io"
 	"strings"
@@ -13,6 +14,9 @@ var exeContent []byte
 
 //go:embed data/lorem0.txt
 var txtContent []byte
+
+//go:embed data
+var data embed.FS
 
 func Test_getFileContentType(t *testing.T) {
 	type args struct {

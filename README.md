@@ -21,3 +21,5 @@ gogrep helloworld
 gogrep helloworld .
 gogrep "hello world" ./data
 ```
+
+## Benchmarks
