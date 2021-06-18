@@ -5,10 +5,10 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
+	"regexp"
 	"runtime"
 	"strings"
 
@@ -18,10 +18,20 @@ import (
 )
 
 func main() {
+
+	// f, perr := os.Create("cpu.pprof")
+	// if perr != nil {
+	// 	os.Exit(1)
+	// }
+	// pprof.StartCPUProfile(f)
+	// defer pprof.StopCPUProfile()
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
 	name := os.Args[0]
+	word := flag.Bool("w", false, "word boundary")
+	multiline := flag.Bool("U", false, "multiline")
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s PATTERN [PATH]\n", name)
 		fmt.Fprintf(flag.CommandLine.Output(), "Search for PATTERN in each FILE in PATH\n")
@@ -30,14 +40,15 @@ func main() {
 	}
 	flag.Parse()
 
-	if err := start(ctx, flag.Args()); err != nil {
+	if err := start(ctx, flag.Args(), *word, *multiline); err != nil {
+		fmt.Println(err)
 		fmt.Printf("usage: %s PATTERN [PATH]\n", name)
 		fmt.Printf("Try '%s --help' for more information\n", name)
 		os.Exit(1)
 	}
 }
 
-func start(ctx context.Context, args []string) error {
+func start(ctx context.Context, args []string, word bool, multiline bool) error {
 	log.Println(args)
 	queue := newJobQueue(runtime.NumCPU() - 1)
 	queue.start(ctx)
@@ -51,10 +62,28 @@ func start(ctx context.Context, args []string) error {
 		dirname = args[1]
 	}
 
+	regex := args[0]
+	if word {
+		regex = "\\b(" + regex + ")\\b"
+	}
+
+	r, err := regexp.Compile(regex)
+	if err != nil {
+		return err
+	}
+
+	var finder finder
+	inlines := 0
+	finder = &lineFinder{}
+	if multiline {
+		inlines = len(newlineRegex.FindAllStringIndex(regex, -1))
+		finder = &multilineFinder{}
+	}
+
 	matcher, _ := newMatcher(dirname)
 
-	err := godirwalk.Walk(dirname, &godirwalk.Options{
-		Callback: godirCallBack(ctx, queue, args[0], matcher),
+	err = godirwalk.Walk(dirname, &godirwalk.Options{
+		Callback: godirCallBack(ctx, queue, r, inlines, finder, matcher),
 		Unsorted: true, // (optional) set true for faster yet non-deterministic enumeration (see godoc)
 	})
 	if err != nil {
@@ -65,7 +94,7 @@ func start(ctx context.Context, args []string) error {
 	return nil
 }
 
-func godirCallBack(ctx context.Context, queue *jobQueue, match string, matcher gitignore.Matcher) func(filePath string, _ *godirwalk.Dirent) error {
+func godirCallBack(ctx context.Context, queue *jobQueue, match *regexp.Regexp, inlines int, finder finder, matcher gitignore.Matcher) func(filePath string, _ *godirwalk.Dirent) error {
 	return func(filePath string, _ *godirwalk.Dirent) error {
 		if matcher != nil && isIgnore(filePath, matcher) {
 			return godirwalk.SkipThis
@@ -80,12 +109,12 @@ func godirCallBack(ctx context.Context, queue *jobQueue, match string, matcher g
 			return nil
 		}
 
-		data, err := ioutil.ReadFile(filePath)
-		if err != nil {
-			return nil
-		}
+		// data, err := ioutil.ReadFile(filePath)
+		// if err != nil {
+		// 	return nil
+		// }
 
-		queue.submit(ctx, &grepJob{filePath, string(data), match})
+		queue.submit(ctx, &grepJob{filePath, match, inlines, finder})
 		return nil
 	}
 
@@ -97,6 +126,8 @@ func isText(filePath string) bool {
 	if err != nil {
 		return false
 	}
+	defer file.Close()
+
 	contentType, err := getFileContentType(file)
 	if err != nil {
 		return false

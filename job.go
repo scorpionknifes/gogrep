@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"os"
+	"regexp"
 )
 
 type job interface {
@@ -10,15 +11,15 @@ type job interface {
 }
 
 type grepJob struct {
-	path  string
-	data  string
-	match string
+	path   string
+	regex  *regexp.Regexp
+	nlines int
+	finder finder
 }
 
 func (j *grepJob) Process(ctx context.Context) {
-	f := finder{}
 	// Replace os.Stdout with ioutil.Discard for benchmarking
-	err := f.Find(ctx, os.Stdout, j.path, j.data, j.match)
+	err := j.finder.Find(ctx, os.Stdout, j.path, j.regex, j.nlines)
 	if err != nil {
 		return
 	}

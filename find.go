@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"regexp"
 
 	"github.com/fatih/color"
@@ -14,90 +16,74 @@ const (
 	defaultTail = 20
 )
 
-var (
-	newlineRegex = regexp.MustCompile("\n")
-)
-
-type finder struct {
-	path   string
-	w      io.Writer
-	text   *string
-	regex  *regexp.Regexp
-	nlines int
+type finder interface {
+	Find(ctx context.Context, w io.Writer, path string, regex *regexp.Regexp, nlines int) error
 }
 
-func (f *finder) Find(ctx context.Context, w io.Writer, path string, text string, regex string) error {
-	r, err := regexp.Compile(regex)
-	if err != nil {
-		return err
-	}
+type lineFinder struct {
+	path  string
+	w     io.Writer
+	text  *string
+	regex *regexp.Regexp
+}
+
+func (f *lineFinder) Find(ctx context.Context, w io.Writer, path string, regex *regexp.Regexp, _ int) error {
+
 	f.path = path
 	f.w = w
-	f.regex = r
-	f.text = &text
-	f.nlines = len(newlineRegex.FindAllStringIndex(regex, -1))
+	f.regex = regex
 
 	return f.find(ctx)
 }
 
-func (f *finder) find(ctx context.Context) error {
-	if *f.text == "" {
-		return nil
+func (f *lineFinder) find(ctx context.Context) error {
+	lineNumber := 0
+
+	file, err := os.Open(f.path)
+	if err != nil {
+		return err
 	}
-	text := *f.text + "\n"
-	newlines := newlineRegex.FindAllStringIndex(text, -1)
-	newline := 0
+	defer file.Close()
 
-	allStr := f.regex.FindAllStringIndex(text, -1)
+	sc := bufio.NewScanner(file)
+	for sc.Scan() {
+		lineNumber++
+		line := sc.Text()
+		if f.regex.MatchString(line) {
+			allStr := f.regex.FindAllStringIndex(line, -1)
 
-	for _, str := range allStr {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		for len(newlines) != newline && str[0] > newlines[newline][0] {
-			newline++
-		}
-		match := color.YellowString(text[str[0]:str[1]])
-		lineNumber := newline + 1
+			for _, str := range allStr {
+				if err := ctx.Err(); err != nil {
+					return err
+				}
+				charNumber := str[0]
 
-		charNumber := str[0]
+				// Slice of bytes
+				match := color.YellowString(line[str[0]:str[1]])
 
-		headNumber := 0
-		head := ""
-		if newline > 0 {
-			//steps
-			charNumber = str[0] - newlines[newline-1][1]
+				headNumber := 0
+				if str[0] > 20 {
+					headNumber = str[0] - 20
+				}
+				tailNumber := len(line)
+				if tailNumber > str[1]+20 {
+					tailNumber = str[1] + 20
+				}
 
-			//steps
-			headNumber = defaultHead
-			if charNumber < headNumber {
-				headNumber = charNumber
+				head := line[headNumber:str[0]]
+
+				tail := line[str[1]:tailNumber]
+
+				f.print(lineNumber, charNumber, head, match, tail)
 			}
-			head = text[str[0]-headNumber : str[0]]
-		} else {
-			if str[0] > defaultHead {
-				head = text[str[0]-defaultHead : str[0]]
-				headNumber = defaultHead
-			} else {
-				head = text[0:str[0]]
-				headNumber = str[0]
-			}
+
 		}
-		tailNumber := 0
-		if newline+f.nlines < len(newlines) {
-			lastNumber := -str[1] + newlines[newline+f.nlines][0]
-			tailNumber = defaultHead + defaultTail - headNumber
-			if lastNumber < tailNumber {
-				tailNumber = lastNumber
-			}
-		}
-		tail := text[str[1] : str[1]+tailNumber]
-		f.print(lineNumber, charNumber, head, match, tail)
+
 	}
 	return nil
 }
 
-func (f *finder) print(lineNumber, charNumber int, head, match, tail string) {
+func (f *lineFinder) print(lineNumber, charNumber int, head, match, tail string) {
 	path := ""
 	if f.path != "" {
 		path = color.RedString("%s", f.path) + ":"
