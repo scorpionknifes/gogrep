@@ -48,31 +48,31 @@ func (f *lineFinder) find(ctx context.Context) error {
 	sc := bufio.NewScanner(file)
 	for sc.Scan() {
 		lineNumber++
-		line := sc.Text()
-		if f.regex.MatchString(line) {
-			allStr := f.regex.FindAllStringIndex(line, -1)
+		line := sc.Bytes()
+		if f.regex.Match(line) {
+			allIndex := f.regex.FindAllIndex(line, -1)
 
-			for _, str := range allStr {
+			for _, index := range allIndex {
 				if err := ctx.Err(); err != nil {
 					return err
 				}
-				charNumber := str[0]
+				charNumber := index[0]
 
 				// Slice of bytes
-				match := color.YellowString(line[str[0]:str[1]])
+				match := line[index[0]:index[1]]
 
 				headNumber := 0
-				if str[0] > 20 {
-					headNumber = str[0] - 20
+				if index[0] > 20 {
+					headNumber = index[0] - 20
 				}
 				tailNumber := len(line)
-				if tailNumber > str[1]+20 {
-					tailNumber = str[1] + 20
+				if tailNumber > index[1]+20 {
+					tailNumber = index[1] + 20
 				}
 
-				head := line[headNumber:str[0]]
+				head := line[headNumber:index[0]]
 
-				tail := line[str[1]:tailNumber]
+				tail := line[index[1]:tailNumber]
 
 				f.print(lineNumber, charNumber, head, match, tail)
 			}
@@ -83,7 +83,7 @@ func (f *lineFinder) find(ctx context.Context) error {
 	return nil
 }
 
-func (f *lineFinder) print(lineNumber, charNumber int, head, match, tail string) {
+func (f *lineFinder) print(lineNumber, charNumber int, head, match, tail []byte) {
 	path := ""
 	if f.path != "" {
 		path = color.RedString("%s", f.path) + ":"
@@ -96,7 +96,7 @@ func (f *lineFinder) print(lineNumber, charNumber int, head, match, tail string)
 		color.GreenString("%d", lineNumber),
 		color.GreenString("%d", charNumber),
 		head,
-		match,
+		color.YellowString("%s", match),
 		tail,
 	)
 }

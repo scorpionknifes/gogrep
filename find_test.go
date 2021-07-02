@@ -21,11 +21,11 @@ func Benchmark_Random(b *testing.B) {
 	// }
 	// getFileContentType(file)
 
-	f := finder{}
+	f := lineFinder{}
 
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		err = f.Find(context.Background(), io.Discard, "", string(data), match)
+		err = f.Find(context.Background(), io.Discard, "", compileRegex(match), 1)
 		if err != nil {
 			b.Fail()
 		}
@@ -60,7 +60,7 @@ func Test_FinderFind(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f := &finder{}
+			f := &lineFinder{}
 			w := &bytes.Buffer{}
 			// ctx, cancel := context.WithCancel(context.Background())
 			// cancel()
@@ -92,7 +92,7 @@ func Test_FinderFindContext(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f := &finder{}
+			f := &lineFinder{}
 			w := &bytes.Buffer{}
 			ctx, cancel := context.WithCancel(context.Background())
 			cancel()
