@@ -95,8 +95,8 @@ func (f *lineFinder) print(lineNumber, charNumber int, head, match, tail string)
 		path,
 		color.GreenString("%d", lineNumber),
 		color.GreenString("%d", charNumber),
-		newlineRegex.ReplaceAllString(head, "\\n"),
-		newlineRegex.ReplaceAllString(match, "\\n"),
-		newlineRegex.ReplaceAllString(tail, "\\n"),
+		head,
+		match,
+		tail,
 	)
 }
