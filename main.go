@@ -7,9 +7,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/signal"
+	"path/filepath"
 	"regexp"
 	"runtime"
+	"runtime/pprof"
 	"strings"
 
 	"github.com/go-git/go-billy/v5/osfs"
@@ -19,15 +20,16 @@ import (
 
 func main() {
 
-	// f, perr := os.Create("cpu.pprof")
-	// if perr != nil {
-	// 	os.Exit(1)
-	// }
-	// pprof.StartCPUProfile(f)
-	// defer pprof.StopCPUProfile()
+	f, perr := os.Create("cpu.pprof")
+	if perr != nil {
+		os.Exit(1)
+	}
+	pprof.StartCPUProfile(f)
+	defer pprof.StopCPUProfile()
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
+	// ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx := context.Background()
+	// defer stop()
 
 	name := os.Args[0]
 	word := flag.Bool("w", false, "word boundary")
@@ -66,24 +68,36 @@ func start(ctx context.Context, args []string, word bool, multiline bool) error 
 	if word {
 		regex = "\\b(" + regex + ")\\b"
 	}
-
-	r, err := regexp.Compile(regex)
-	if err != nil {
-		return err
-	}
-
-	var finder finder
-	inlines := 0
-	finder = &lineFinder{}
-	if multiline {
-		inlines = len(newlineRegex.FindAllStringIndex(regex, -1))
-		finder = &multilineFinder{}
-	}
+	//var finder finder
+	//inlines := 0
+	// finder = &lineFinder{}
+	// if multiline {
+	// 	inlines = len(newlineRegex.FindAllStringIndex(regex, -1))
+	// 	finder = &multilineFinder{}
+	// }
 
 	matcher, _ := newMatcher(dirname)
 
-	err = godirwalk.Walk(dirname, &godirwalk.Options{
-		Callback: godirCallBack(ctx, queue, r, inlines, finder, matcher),
+	rout := make(chan routine)
+	for i := 0; i < runtime.NumCPU(); i++ {
+		go consumer(rout, regex)
+	}
+
+	err := godirwalk.Walk(dirname, &godirwalk.Options{
+		Callback: func(filePath string, _ *godirwalk.Dirent) error {
+			if matcher != nil && isIgnore(filePath, matcher) {
+				return godirwalk.SkipThis
+			}
+
+			// don't check .git folder but make sure to scan .gitignore
+			if strings.Contains(filePath, ".git") && !strings.Contains(filePath, ".gitignore") {
+				return godirwalk.SkipThis
+			}
+
+			rout <- routine{filePath}
+			return nil
+		},
+		//Callback: godirCallBack(ctx, queue, r, inlines, finder, matcher),
 		Unsorted: true, // (optional) set true for faster yet non-deterministic enumeration (see godoc)
 	})
 	if err != nil {
@@ -122,6 +136,7 @@ func godirCallBack(ctx context.Context, queue *jobQueue, match *regexp.Regexp, i
 
 // isText checks if the file content is text
 func isText(filePath string) bool {
+	fmt.Println(filepath.Ext(filePath))
 	file, err := os.Open(filePath)
 	if err != nil {
 		return false

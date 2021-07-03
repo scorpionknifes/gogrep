@@ -37,7 +37,7 @@ func (f *lineFinder) Find(ctx context.Context, w io.Writer, path string, regex *
 }
 
 func (f *lineFinder) find(ctx context.Context) error {
-	lineNumber := 0
+	//lineNumber := 0
 
 	file, err := os.Open(f.path)
 	if err != nil {
@@ -47,37 +47,38 @@ func (f *lineFinder) find(ctx context.Context) error {
 
 	sc := bufio.NewScanner(file)
 	for sc.Scan() {
-		lineNumber++
-		line := sc.Bytes()
-		if f.regex.Match(line) {
-			allIndex := f.regex.FindAllIndex(line, -1)
+		sc.Bytes()
+		// lineNumber++
+		// line := sc.Bytes()
+		// if f.regex.Match(line) {
+		// 	allIndex := f.regex.FindAllIndex(line, -1)
 
-			for _, index := range allIndex {
-				if err := ctx.Err(); err != nil {
-					return err
-				}
-				charNumber := index[0]
+		// 	for _, index := range allIndex {
+		// 		if err := ctx.Err(); err != nil {
+		// 			return err
+		// 		}
+		// 		charNumber := index[0]
 
-				// Slice of bytes
-				match := line[index[0]:index[1]]
+		// 		// Slice of bytes
+		// 		match := line[index[0]:index[1]]
 
-				headNumber := 0
-				if index[0] > 20 {
-					headNumber = index[0] - 20
-				}
-				tailNumber := len(line)
-				if tailNumber > index[1]+20 {
-					tailNumber = index[1] + 20
-				}
+		// 		headNumber := 0
+		// 		if index[0] > 20 {
+		// 			headNumber = index[0] - 20
+		// 		}
+		// 		tailNumber := len(line)
+		// 		if tailNumber > index[1]+20 {
+		// 			tailNumber = index[1] + 20
+		// 		}
 
-				head := line[headNumber:index[0]]
+		// 		head := line[headNumber:index[0]]
 
-				tail := line[index[1]:tailNumber]
+		// 		tail := line[index[1]:tailNumber]
 
-				f.print(lineNumber, charNumber, head, match, tail)
-			}
+		// 		f.print(lineNumber, charNumber, head, match, tail)
+		// 	}
 
-		}
+		// }
 
 	}
 	return nil

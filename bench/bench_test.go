@@ -33,5 +33,6 @@ func Cmd(cmd string) []byte {
 	if err != nil {
 		panic(err)
 	}
+	//fmt.Println(string(out))
 	return out
 }
