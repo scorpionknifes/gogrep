@@ -14,27 +14,18 @@ type routine struct {
 	value string
 }
 
-func serialConsumer(regex *pcre.Regexp) chan string {
-	f := make(chan string)
-
-	go func() {
-		w := bufio.NewWriter(os.Stdout)
-		defer w.Flush()
-
-		for filePath := range f {
-			file, err := os.Open(filePath)
-			if err != nil {
-			}
-
-			scanner := bufio.NewScanner(file)
-			for scanner.Scan() {
-				runRegex(w, scanner.Bytes(), regex)
-			}
-			file.Close()
+func serialConsumer(w io.Writer, f chan string, regex *pcre.Regexp) {
+	for filePath := range f {
+		file, err := os.Open(filePath)
+		if err != nil {
 		}
-	}()
 
-	return f
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			runRegex(w, scanner.Bytes(), regex)
+		}
+		file.Close()
+	}
 }
 
 func bufferConsumer(r chan routine, l chan []byte, wg *sync.WaitGroup, regex *pcre.Regexp) {

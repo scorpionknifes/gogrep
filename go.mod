@@ -1,4 +1,4 @@
-module github.com/scorpionknifes/gogrep
+module github.com/scorpionknifes/gogrep-v2
 
 go 1.16
 

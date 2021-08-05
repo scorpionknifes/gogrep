@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"os/exec"
 	"testing"
 )
@@ -8,7 +9,7 @@ import (
 func BenchmarkGoGrep(b *testing.B) {
 	// run the Fib function b.N times
 	for n := 0; n < b.N; n++ {
-		Cmd("./gogrep.exe")
+		run(io.Discard, 12)
 	}
 }
 
